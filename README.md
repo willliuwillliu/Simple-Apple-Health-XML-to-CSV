@@ -1,8 +1,14 @@
-# Simple Apple Health XML to CSV
+# Simple Apple Health XML to CSV - Workouts only fork
 
 A simple script to convert Apple Health's export.xml file to an easy to use csv.
 
-Test
+This is a fork of (jameno/Simple-Apple-Health-XML-to-CSV)[https://github.com/jameno/Simple-Apple-Health-XML-to-CSV]. The original code worked fine but the export was still too huge (mine was 2M rows).
+
+This fork transforms the XML into CSV but also does the following:
+
+- Filters for only workouts
+- Renames removes "HKWorkoutActivityType" from the values in `workoutActivityType`
+- Removes empty columns
 
 ## How to Run
 

@@ -61,37 +61,40 @@ def convert_xml():
 
     # Every health data type and some columns have a long identifer
     # Removing these for readability
-    health_df.type = health_df.type.str.replace('HKQuantityTypeIdentifier', "")
-    health_df.type = health_df.type.str.replace('HKCategoryTypeIdentifier', "")
-    health_df.columns = \
-        health_df.columns.str.replace("HKCharacteristicTypeIdentifier", "")
+    health_df.type = health_df.type.str.replace("HKQuantityTypeIdentifier", "")
+    health_df.type = health_df.type.str.replace("HKCategoryTypeIdentifier", "")
+    health_df.columns = health_df.columns.str.replace(
+        "HKCharacteristicTypeIdentifier", ""
+    )
 
     # Reorder some of the columns for easier visual data review
     original_cols = list(health_df)
-    shifted_cols = ['type',
-                    'sourceName',
-                    'value',
-                    'unit',
-                    'startDate',
-                    'endDate',
-                    'creationDate']
+    shifted_cols = [
+        "type",
+        "sourceName",
+        "value",
+        "unit",
+        "startDate",
+        "endDate",
+        "creationDate",
+    ]
 
     # Add loop specific column ordering if metadata entries exist
-    if 'com.loopkit.InsulinKit.MetadataKeyProgrammedTempBasalRate' in original_cols:
-        shifted_cols.append('com.loopkit.InsulinKit.MetadataKeyProgrammedTempBasalRate')
+    if "com.loopkit.InsulinKit.MetadataKeyProgrammedTempBasalRate" in original_cols:
+        shifted_cols.append("com.loopkit.InsulinKit.MetadataKeyProgrammedTempBasalRate")
 
-    if 'com.loopkit.InsulinKit.MetadataKeyScheduledBasalRate' in original_cols:
-        shifted_cols.append('com.loopkit.InsulinKit.MetadataKeyScheduledBasalRate')
+    if "com.loopkit.InsulinKit.MetadataKeyScheduledBasalRate" in original_cols:
+        shifted_cols.append("com.loopkit.InsulinKit.MetadataKeyScheduledBasalRate")
 
-    if 'com.loudnate.CarbKit.HKMetadataKey.AbsorptionTimeMinutes' in original_cols:
-        shifted_cols.append('com.loudnate.CarbKit.HKMetadataKey.AbsorptionTimeMinutes')
+    if "com.loudnate.CarbKit.HKMetadataKey.AbsorptionTimeMinutes" in original_cols:
+        shifted_cols.append("com.loudnate.CarbKit.HKMetadataKey.AbsorptionTimeMinutes")
 
     remaining_cols = list(set(original_cols) - set(shifted_cols))
     reordered_cols = shifted_cols + remaining_cols
-    health_df = health_df.reindex(labels=reordered_cols, axis='columns')
+    health_df = health_df.reindex(labels=reordered_cols, axis="columns")
 
     # Sort by newest data first
-    health_df.sort_values(by='startDate', ascending=False, inplace=True)
+    health_df.sort_values(by="startDate", ascending=False, inplace=True)
 
     print("done!")
 
@@ -100,10 +103,22 @@ def convert_xml():
 
 def save_to_csv(health_df):
     print("Saving CSV file...", end="")
-    today = dt.datetime.now().strftime('%Y-%m-%d')
-    health_df.to_csv("apple_health_export_" + today + ".csv", index=False)
+    today = dt.datetime.now().strftime("%Y-%m-%d")
+    originalRowCount = health_df.shape[0]
+    originalColCount = health_df.shape[1]
+    print("Original row/col count:", originalRowCount, originalColCount)
+    health_df["startDate"] = pd.to_datetime(health_df["startDate"], errors="coerce")
+    workouts_df = health_df[health_df.workoutActivityType.notnull()]
+    workouts_df["dateNoTime"] = health_df["startDate"].dt.normalize()
+    workouts_df = workouts_df.dropna(axis="columns", how="all")
+    filteredRowCount = workouts_df.shape[0]
+    filteredColCount = workouts_df.shape[1]
+    workouts_df["workoutActivityType"] = workouts_df["workoutActivityType"].replace(
+        {"HKWorkoutActivityType": ""}, regex=True
+    )
+    print("Filtered # of rows/cols:", filteredRowCount, filteredColCount)
+    workouts_df.to_csv("workouts_export_" + today + ".csv", index=False)
     print("done!")
-
     return
 
 
@@ -116,5 +131,5 @@ def main():
 
 
 # %%
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
